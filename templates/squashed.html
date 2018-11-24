@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" type="image/png" href="static/game.png"/>
+    <title id="user-title">Squashed</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css" />
+  </head>
+
+  <body style="overflow-y:hidden;" class="has-navbar-fixed-bottom">
+
+    <!-- Post Button -->
+    <nav class="navbar is-fixed-bottom" role="navigation" aria-label="main navigation">
+      <div class="container">
+        <div class="navbar-item is-expanded">
+          <input id="post-text" class="input" type="text">
+          <a id="post-btn" class="button is-info">Post</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Messages -->
+    <div id="content" class="container" style="overflow-y:auto; margin-bottom: 100px;"></div>
+
+    <!-- Username Button -->
+    <div class="modal is-active">
+      <div class="modal-background"></div>
+      <div class="modal-content">
+        <div class="field has-addons">
+          <div class="control is-expanded">
+            <input id="username-input" class="input" type="text" placeholder="Choose a username">
+          </div>
+          <div class="control">
+            <a id="start-game" class="button is-info">Start Game</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://js.pusher.com/4.2/pusher.min.js"></script>
+    <script
+      src="https://code.jquery.com/jquery-3.3.1.min.js"
+      integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+      crossorigin="anonymous">
+    </script>
+
+    <script>
+      $(function(){
+        let username;
+
+        $("#start-game").on("click", function() {
+          username = $("#username-input").val();
+          document.getElementById("user-title").innerHTML = "Squashed - " + username;
+          $(".modal").removeClass("is-active");
+          $.post("/users_list", {"nick" : username});
+        });
+
+        $("#post-btn").on("click", function() {
+          let message = $("#post-text").val();
+          $.post("/message", {"username" : username, "message" : message}, function(){
+            $("#post-text").val('');
+          });
+        });
+
+        Pusher.logToConsole = true;
+
+        var pusher = new Pusher("PUSHER_APP_KEY", {
+          cluster: "PUSHER_APP_CLUSTER",
+          encrypted: true
+        });
+
+        var channel = pusher.subscribe("chat-channel");
+
+        channel.bind("new-message", function(data) {
+
+          let name = data.username;
+          let message = data.message;
+
+          let message_template = `<article class="media">
+                                  <div class="media-content">
+                                    <div class="content">
+                                      <p>
+                                        <strong>&nbsp;${name}</strong>
+                                        <br> &nbsp;${message}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  </article>`;
+                                  
+            $("#content").append(message_template);
+          });
+      });
+    </script>
+  </body>
+</html>
